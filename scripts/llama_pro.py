@@ -96,7 +96,7 @@ def block_expansion(
     weights_name = SAFE_WEIGHTS_NAME if save_safetensors else WEIGHTS_NAME
     filename_pattern = weights_name.replace(".bin", "{suffix}.bin").replace(".safetensors", "{suffix}.safetensors")
     state_dict_split = split_torch_state_dict_into_shards(
-        output_state_dict, filename_pattern=filename_pattern, max_shard_size=shard_size
+        output_state_dict, filename_pattern=filename_pattern, max_shard_size='50GB'
     )
     for shard_file, tensors in tqdm(state_dict_split.filename_to_tensors.items(), desc="Save weights"):
         shard = {tensor: output_state_dict[tensor].contiguous() for tensor in tensors}
