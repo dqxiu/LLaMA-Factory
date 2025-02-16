@@ -130,15 +130,15 @@ def export_model(args: Optional[Dict[str, Any]] = None) -> None:
 
     model.save_pretrained(
         save_directory=model_args.export_dir,
-        max_shard_size=f"{model_args.export_size}GB",
-        safe_serialization=(not model_args.export_legacy_format), max_shard_size='50GB'
+        max_shard_size=f"50GB",
+        safe_serialization=(not model_args.export_legacy_format)
         
     )
     if model_args.export_hub_model_id is not None:
         model.push_to_hub(
             model_args.export_hub_model_id,
             token=model_args.hf_hub_token,
-            max_shard_size=f"{model_args.export_size}GB",
+            max_shard_size=f"50GB",
             safe_serialization=(not model_args.export_legacy_format),
         )
 
