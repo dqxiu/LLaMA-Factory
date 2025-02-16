@@ -86,7 +86,8 @@ def fix_valuehead_checkpoint(
             decoder_state_dict[name.replace("pretrained_model.", "", 1)] = param
 
     model.pretrained_model.save_pretrained(
-        output_dir, state_dict=decoder_state_dict or None, safe_serialization=safe_serialization
+        output_dir, state_dict=decoder_state_dict or None, safe_serialization=safe_serialization,
+                    max_shard_size='50GB'
     )
 
     if safe_serialization:
@@ -123,12 +124,12 @@ class SaveProcessorCallback(TrainerCallback):
     def on_save(self, args: "TrainingArguments", state: "TrainerState", control: "TrainerControl", **kwargs):
         if args.should_save:
             output_dir = os.path.join(args.output_dir, f"{PREFIX_CHECKPOINT_DIR}-{state.global_step}")
-            self.processor.save_pretrained(output_dir)
+            self.processor.save_pretrained(output_dir, max_shard_size='50GB')
 
     @override
     def on_train_end(self, args: "TrainingArguments", state: "TrainerState", control: "TrainerControl", **kwargs):
         if args.should_save:
-            self.processor.save_pretrained(args.output_dir)
+            self.processor.save_pretrained(args.output_dir, max_shard_size='50GB')
 
 
 class PissaConvertCallback(TrainerCallback):
@@ -145,7 +146,7 @@ class PissaConvertCallback(TrainerCallback):
             if isinstance(model, PeftModel):
                 init_lora_weights = getattr(model.peft_config["default"], "init_lora_weights")
                 setattr(model.peft_config["default"], "init_lora_weights", True)
-                model.save_pretrained(pissa_init_dir, safe_serialization=args.save_safetensors)
+                model.save_pretrained(pissa_init_dir, safe_serialization=args.save_safetensors, max_shard_size='50GB')
                 setattr(model.peft_config["default"], "init_lora_weights", init_lora_weights)
 
     @override
@@ -163,10 +164,11 @@ class PissaConvertCallback(TrainerCallback):
             if isinstance(model, PeftModel):
                 init_lora_weights = getattr(model.peft_config["default"], "init_lora_weights")
                 setattr(model.peft_config["default"], "init_lora_weights", True)
-                model.save_pretrained(pissa_backup_dir, safe_serialization=args.save_safetensors)
+                model.save_pretrained(pissa_backup_dir, safe_serialization=args.save_safetensors, max_shard_size='50GB')
                 setattr(model.peft_config["default"], "init_lora_weights", init_lora_weights)
                 model.save_pretrained(
-                    pissa_convert_dir, safe_serialization=args.save_safetensors, convert_pissa_to_lora=pissa_init_dir
+                    pissa_convert_dir, safe_serialization=args.save_safetensors, convert_pissa_to_lora=pissa_init_dir,
+                    max_shard_size='50GB'
                 )  # TODO: use `path_initial_model_for_weight_conversion` (peft>=0.12.0)
                 model.load_adapter(pissa_backup_dir, "default", is_trainable=True)
                 model.set_adapter("default")

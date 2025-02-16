@@ -73,7 +73,7 @@ def quantize_loftq(
 
     # Save base model
     base_model: "PreTrainedModel" = peft_model.unload()
-    base_model.save_pretrained(output_dir, safe_serialization=save_safetensors)
+    base_model.save_pretrained(output_dir, safe_serialization=save_safetensors, max_shard_size='50GB')
     tokenizer.save_pretrained(output_dir)
     print(f"Model weights saved in {output_dir}")
 
