@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
     from ...hparams import FinetuningArguments
 
-
+from transformers.modeling_utils import SAFE_WEIGHTS_INDEX_NAME, SAFE_WEIGHTS_NAME, WEIGHTS_INDEX_NAME, WEIGHTS_NAME
 class CustomTrainer(Trainer):
     r"""
     Inherits Trainer for custom optimizer.
@@ -173,7 +173,7 @@ class CustomTrainer(Trainer):
                 logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
                 if self.args.save_safetensors:
                     safetensors.torch.save_file(
-                        state_dict, os.path.join(output_dir, "SAFE_WEIGHTS_NAME"), metadata={"format": "pt"}
+                        state_dict, os.path.join(output_dir, SAFE_WEIGHTS_NAME), metadata={"format": "pt"}
                     )
                 else:
                     torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
