@@ -35,12 +35,11 @@ from pathlib import Path  # 用于SageMaker路径操作
 from packaging import version  # 版本号比较
 import safetensors  # 安全张量保存格式
 from transformers import (
-    PreTrainedModel,  # 基础模型类
-    WEIGHTS_NAME, SAFE_WEIGHTS_NAME, TRAINING_ARGS_NAME,  # 标准文件名常量
-    is_torch_xla_available, is_sagemaker_mp_enabled  # 运行环境检测
+    PreTrainedModel,  # 基础模型类  # 标准文件名常量
+    is_torch_xla_available  # 运行环境检测
 )
-from peft import PeftModel, is_peft_available  # PEFT相关
-from transformers.deepspeed import remove_dummy_checkpoint  # DeepSpeed清理
+
+from transformers.trainer_pt_utils import remove_dummy_checkpoint  # DeepSpeed清理
 from accelerate import __version__ as accelerate_version  # 加速库版本
 
 
@@ -51,8 +50,12 @@ if TYPE_CHECKING:
 
     from ...hparams import FinetuningArguments
 
-from transformers.modeling_utils import SAFE_WEIGHTS_INDEX_NAME, WEIGHTS_INDEX_NAME
+from transformers.modeling_utils import SAFE_WEIGHTS_INDEX_NAME, SAFE_WEIGHTS_NAME, WEIGHTS_INDEX_NAME, WEIGHTS_NAME, is_peft_available
+from transformers.file_utils import is_sagemaker_mp_enabled
+from transformers.trainer import TRAINING_ARGS_NAME
 
+if is_peft_available():
+    from peft import PeftModel
 
 logger = logging.get_logger(__name__)
 
@@ -173,6 +176,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
             for text, pred, label in zip(decoded_inputs, decoded_preds, decoded_labels):
                 f.write(json.dumps({"prompt": text, "predict": pred, "label": label}, ensure_ascii=False) + "\n")
 
+
     @override
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
         print("enter _save")
@@ -192,7 +196,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
                 print("enter if isinstance(self.accelerator.unwrap_model(self.model), supported_classes)")
                 self.accelerator.unwrap_model(self.model).save_pretrained(
                     output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors,
-                    max_shard_size='50GB'
+                    max_shard_size='0.4GB'
                 )
             else:
                 logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
@@ -205,7 +209,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         else:
             self.model.save_pretrained(
                 output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors,
-                max_shard_size='50GB'
+                max_shard_size='0.4GB'
             )
 
         if self.tokenizer is not None:
