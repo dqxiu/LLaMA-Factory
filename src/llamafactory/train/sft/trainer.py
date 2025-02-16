@@ -196,7 +196,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
                 print("enter if isinstance(self.accelerator.unwrap_model(self.model), supported_classes)")
                 self.accelerator.unwrap_model(self.model).save_pretrained(
                     output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors,
-                    max_shard_size='0.4GB'
+                    max_shard_size='50GB'
                 )
             else:
                 logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
@@ -209,7 +209,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
         else:
             self.model.save_pretrained(
                 output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors,
-                max_shard_size='0.4GB'
+                max_shard_size='50GB'
             )
 
         if self.tokenizer is not None:
