@@ -31,6 +31,18 @@ from ...extras.packages import is_transformers_version_greater_than
 from ..callbacks import SaveProcessorCallback
 from ..trainer_utils import create_custom_optimizer, create_custom_scheduler
 
+from pathlib import Path  # 用于SageMaker路径操作
+from packaging import version  # 版本号比较
+import safetensors  # 安全张量保存格式
+from transformers import (
+    PreTrainedModel,  # 基础模型类
+    WEIGHTS_NAME, SAFE_WEIGHTS_NAME, TRAINING_ARGS_NAME,  # 标准文件名常量
+    is_torch_xla_available, is_sagemaker_mp_enabled  # 运行环境检测
+)
+from peft import PeftModel, is_peft_available  # PEFT相关
+from transformers.deepspeed import remove_dummy_checkpoint  # DeepSpeed清理
+from accelerate import __version__ as accelerate_version  # 加速库版本
+
 
 if TYPE_CHECKING:
     from torch.utils.data import Dataset
@@ -39,7 +51,7 @@ if TYPE_CHECKING:
 
     from ...hparams import FinetuningArguments
 
-from transformers.modeling_utils import SAFE_WEIGHTS_INDEX_NAME, SAFE_WEIGHTS_NAME, WEIGHTS_INDEX_NAME, WEIGHTS_NAME
+from transformers.modeling_utils import SAFE_WEIGHTS_INDEX_NAME, WEIGHTS_INDEX_NAME
 
 
 logger = logging.get_logger(__name__)
