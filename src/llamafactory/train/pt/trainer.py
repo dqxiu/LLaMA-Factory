@@ -150,6 +150,7 @@ class CustomTrainer(Trainer):
 
     @override
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
+        print("enter _save")
         # If we are executing this function, we are the process zero, so we don't check for that.
         output_dir = output_dir if output_dir is not None else self.args.output_dir
         os.makedirs(output_dir, exist_ok=True)
@@ -163,8 +164,10 @@ class CustomTrainer(Trainer):
                 state_dict = self.model.state_dict()
 
             if isinstance(self.accelerator.unwrap_model(self.model), supported_classes):
+                print("enter if isinstance(self.accelerator.unwrap_model(self.model), supported_classes)")
                 self.accelerator.unwrap_model(self.model).save_pretrained(
-                    output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+                    output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors,
+                    max_shard_size='50GB'
                 )
             else:
                 logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
