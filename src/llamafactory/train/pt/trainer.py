@@ -72,3 +72,78 @@ class CustomTrainer(Trainer):
             return torch.utils.data.SequentialSampler(self.train_dataset)
 
         return super()._get_train_sampler()
+
+    @override
+    def _load_rng_state(self, checkpoint):
+        # Load RNG states from `checkpoint`
+        if checkpoint is None:
+            return
+
+        if self.args.world_size > 1:
+            process_index = self.args.process_index
+            rng_file = os.path.join(checkpoint, f"rng_state_{process_index}.pth")
+            if not os.path.isfile(rng_file):
+                logger.info(
+                    f"Didn't find an RNG file for process {process_index}, if you are resuming a training that "
+                    "wasn't launched in a distributed fashion, reproducibility is not guaranteed."
+                )
+                return
+        else:
+            rng_file = os.path.join(checkpoint, "rng_state.pth")
+            if not os.path.isfile(rng_file):
+                logger.info(
+                    "Didn't find an RNG file, if you are resuming a training that was launched in a distributed "
+                    "fashion, reproducibility is not guaranteed."
+                )
+                return
+
+        checkpoint_rng_state = torch.load(rng_file, weights_only=False)
+        random.setstate(checkpoint_rng_state["python"])
+        np.random.set_state(checkpoint_rng_state["numpy"])
+        torch.random.set_rng_state(checkpoint_rng_state["cpu"])
+        if torch.cuda.is_available():
+            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
+                torch.cuda.random.set_rng_state_all(checkpoint_rng_state["cuda"])
+            else:
+                try:
+                    torch.cuda.random.set_rng_state(checkpoint_rng_state["cuda"])
+                except Exception as e:
+                    logger.info(
+                        f"Didn't manage to set back the RNG states of the GPU because of the following error:\n {e}"
+                        "\nThis won't yield the same results as if the training had not been interrupted."
+                    )
+        if is_torch_xla_available():
+            xm.set_rng_state(checkpoint_rng_state["xla"])
+        if is_torch_npu_available():
+            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
+                torch.npu.random.set_rng_state_all(checkpoint_rng_state["npu"])
+            else:
+                try:
+                    torch.npu.random.set_rng_state(checkpoint_rng_state["npu"])
+                except Exception as e:
+                    logger.info(
+                        f"Didn't manage to set back the RNG states of the NPU because of the following error:\n {e}"
+                        "\nThis won't yield the same results as if the training had not been interrupted."
+                    )
+        if is_torch_mlu_available():
+            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
+                torch.mlu.random.set_rng_state_all(checkpoint_rng_state["mlu"])
+            else:
+                try:
+                    torch.mlu.random.set_rng_state(checkpoint_rng_state["mlu"])
+                except Exception as e:
+                    logger.info(
+                        f"Didn't manage to set back the RNG states of the MLU because of the following error:\n {e}"
+                        "\nThis won't yield the same results as if the training had not been interrupted."
+                    )
+        if is_torch_musa_available():
+            if self.args.parallel_mode == ParallelMode.DISTRIBUTED:
+                torch.musa.set_rng_state_all(checkpoint_rng_state["musa"])
+            else:
+                try:
+                    torch.musa.set_rng_state(checkpoint_rng_state["musa"])
+                except Exception as e:
+                    logger.info(
+                        f"Didn't manage to set back the RNG states of the MUSA because of the following error:\n {e}"
+                        "\nThis won't yield the same results as if the training had not been interrupted."
+                    )
